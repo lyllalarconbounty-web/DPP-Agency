@@ -1,0 +1,921 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>INOZA Medical Records Scanner</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 15px;
+  background: #f4f6f8;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: #222;
+}
+
+h1 {
+  margin: 12px 0 5px;
+  font-size: 27px;
+  font-weight: bold;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+
+#startButton {
+  width: 90%;
+  max-width: 400px;
+  padding: 18px;
+  border: none;
+  border-radius: 12px;
+  background: #198754;
+  color: white;
+  font-size: 21px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#startButton:active,
+.scanAgain:active {
+  transform: scale(0.98);
+}
+
+#reader {
+  width: 100%;
+  max-width: 500px;
+  margin: 15px auto;
+  background: black;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+#scannerMessage {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 15px;
+}
+
+#loading {
+  display: none;
+  font-size: 19px;
+  font-weight: bold;
+  margin: 25px;
+}
+
+#employeeCard {
+  display: none;
+  background: white;
+  width: 96%;
+  max-width: 550px;
+  margin: 20px auto;
+  padding: 22px;
+  border-radius: 18px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+  text-align: left;
+}
+
+.registered {
+  color: #198754;
+  font-size: 25px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.employee-name {
+  font-size: 25px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 5px;
+  overflow-wrap: anywhere;
+}
+
+.employee-details {
+  text-align: center;
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #174a36;
+  background: #e8f3ed;
+  padding: 11px;
+  border-radius: 8px;
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.field {
+  padding: 10px 2px;
+  border-bottom: 1px solid #eee;
+}
+
+.label {
+  color: #777;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.value {
+  font-size: 17px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: bold;
+  background: #e2e3e5;
+  color: #41464b;
+}
+
+.status.good {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status.bad {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status.pending {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.status.neutral {
+  background: #e2e3e5;
+  color: #41464b;
+}
+
+.document-button {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  margin: 9px 0;
+  border-radius: 9px;
+  background: #0d6efd;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.document-button:active {
+  opacity: 0.85;
+}
+
+.no-document {
+  color: #999;
+  font-size: 14px;
+  padding: 9px 2px;
+}
+
+#notRegistered {
+  display: none;
+  background: #f8d7da;
+  color: #842029;
+  width: 95%;
+  max-width: 500px;
+  margin: 25px auto;
+  padding: 28px 15px;
+  border-radius: 18px;
+  font-size: 25px;
+  font-weight: bold;
+}
+
+#qrText {
+  font-size: 16px;
+  font-weight: normal;
+  margin-top: 15px;
+  overflow-wrap: anywhere;
+}
+
+#errorBox {
+  display: none;
+  width: 95%;
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 18px;
+  background: #f8d7da;
+  color: #842029;
+  border-radius: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.scanAgain {
+  display: block;
+  width: 100%;
+  margin-top: 22px;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  background: #198754;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#notRegistered .scanAgain {
+  background: #0d6efd;
+}
+
+.footer {
+  color: #999;
+  font-size: 12px;
+  margin: 25px 0 10px;
+}
+
+@media (max-width: 400px) {
+  h1 {
+    font-size: 23px;
+  }
+
+  #employeeCard {
+    padding: 16px;
+  }
+
+  .employee-name {
+    font-size: 22px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h1>📋 INOZA MEDICAL SCANNER</h1>
+
+<div class="subtitle">
+Employee Medical Records & Compliance Verification
+</div>
+
+<button id="startButton" onclick="startScanner()">
+📷 START SCANNING
+</button>
+
+<div id="reader" style="display:none;"></div>
+
+<div id="scannerMessage">
+Ready to scan
+</div>
+
+<div id="loading">
+🔄 Checking employee records...
+</div>
+
+<div id="errorBox"></div>
+
+
+<!-- REGISTERED EMPLOYEE -->
+
+<div id="employeeCard">
+
+  <div class="registered">
+    ✅ EMPLOYEE RECORD FOUND
+  </div>
+
+  <div id="name" class="employee-name"></div>
+  <div id="employeeDetails" class="employee-details"></div>
+
+  <div class="field">
+    <div class="label">QR ID</div>
+    <div id="qrNumber" class="value"></div>
+  </div>
+
+
+  <!-- MEDICAL INFORMATION -->
+
+  <div class="section-title">
+    🩺 MEDICAL RECORD
+  </div>
+
+  <div class="field">
+    <div class="label">Medical Status</div>
+    <div id="medicalStatus" class="status"></div>
+  </div>
+
+  <div class="field">
+    <div class="label">Date of Medical</div>
+    <div id="medicalDate" class="value"></div>
+  </div>
+
+
+  <!-- HEALTH CARD -->
+
+  <div class="section-title">
+    🪪 HEALTH CARD INFORMATION
+  </div>
+
+  <div class="field">
+    <div class="label">Health Card Status</div>
+    <div id="healthCardStatus" class="status"></div>
+  </div>
+
+  <div class="field">
+    <div class="label">Date of Issuance</div>
+    <div id="healthCardIssueDate" class="value"></div>
+  </div>
+
+  <div class="field">
+    <div class="label">Health Card Expiry</div>
+    <div id="healthCardExpiry" class="value"></div>
+  </div>
+
+
+  <!-- WORKING PERMIT -->
+
+  <div class="section-title">
+    📄 WORKING PERMIT INFORMATION
+  </div>
+
+  <div class="field">
+    <div class="label">Working Permit Status</div>
+    <div id="workingPermit" class="status"></div>
+  </div>
+
+  <div class="field">
+    <div class="label">Date of Issuance</div>
+    <div id="workingPermitIssueDate" class="value"></div>
+  </div>
+
+
+  <!-- DOCUMENT LINKS -->
+
+  <div class="section-title">
+    📎 DOCUMENTS
+  </div>
+
+  <div id="medicalLinkContainer"></div>
+  <div id="healthCardLinkContainer"></div>
+  <div id="workingPermitLinkContainer"></div>
+
+
+  <button class="scanAgain" onclick="scanAgain()">
+    📷 SCAN ANOTHER EMPLOYEE
+  </button>
+
+</div>
+
+
+<!-- NOT REGISTERED -->
+
+<div id="notRegistered">
+
+  ❌ NOT YET REGISTERED
+
+  <div id="qrText"></div>
+
+  <button class="scanAgain" onclick="scanAgain()">
+    📷 SCAN AGAIN
+  </button>
+
+</div>
+
+
+<div class="footer">
+Bounty Plus Inc. | Employee Medical Records & Compliance Monitoring
+</div>
+
+
+<script>
+
+// ======================================================
+// CONFIGURATION
+// ======================================================
+
+// IMPORTANT:
+// Replace this with the NEW Apps Script Web App URL
+// for the INOZA Medical Records spreadsheet.
+
+const API_URL = "https://script.google.com/macros/s/AKfycbzBI01HMBfZSS8hIGpGv9ahPgpKWLLoVCpkSEyllpfrZFQbb9kZwmTVvzaGSKhVLlhXww/exec";
+
+
+// ======================================================
+// VARIABLES
+// ======================================================
+
+let scanner = null;
+let scannerRunning = false;
+let processingScan = false;
+let lastQR = "";
+let lastScanTime = 0;
+
+
+// ======================================================
+// START SCANNER
+// ======================================================
+
+async function startScanner() {
+
+  hideResults();
+
+  document.getElementById("startButton").style.display = "none";
+  document.getElementById("reader").style.display = "block";
+  document.getElementById("scannerMessage").style.display = "block";
+  document.getElementById("scannerMessage").innerText =
+    "Requesting camera permission...";
+
+  try {
+
+    scanner = new Html5Qrcode("reader");
+
+    const config = {
+      fps: 10,
+      qrbox: {
+        width: 280,
+        height: 280
+      },
+      aspectRatio: 1.0,
+      showTorchButtonIfSupported: true,
+      rememberLastUsedCamera: true
+    };
+
+    await scanner.start(
+      { facingMode: "environment" },
+      config,
+      onScanSuccess,
+      onScanFailure
+    );
+
+    scannerRunning = true;
+
+    document.getElementById("scannerMessage").innerText =
+      "Point the camera at the employee QR code.";
+
+  }
+
+  catch(error) {
+
+    console.error(error);
+    showCameraError(error);
+
+  }
+
+}
+
+
+// ======================================================
+// QR SCAN SUCCESS
+// ======================================================
+
+async function onScanSuccess(decodedText) {
+
+  if (!decodedText || processingScan) return;
+
+  const now = Date.now();
+
+  if (
+    decodedText === lastQR &&
+    now - lastScanTime < 5000
+  ) {
+    return;
+  }
+
+  processingScan = true;
+  lastQR = decodedText;
+  lastScanTime = now;
+
+  await stopScanner();
+
+  document.getElementById("reader").style.display = "none";
+  document.getElementById("scannerMessage").style.display = "none";
+  document.getElementById("loading").style.display = "block";
+
+  try {
+
+    if (
+      !API_URL ||
+      API_URL === "PASTE_NEW_APPS_SCRIPT_WEB_APP_URL_HERE"
+    ) {
+      throw new Error("Please enter the new Apps Script Web App URL.");
+    }
+
+    const response = await fetch(API_URL, {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+
+      body: JSON.stringify({
+        qr: decodedText
+      })
+
+    });
+
+    if (!response.ok) {
+      throw new Error("Server returned HTTP " + response.status);
+    }
+
+    const result = await response.json();
+
+    displayResult(result);
+
+  }
+
+  catch(error) {
+
+    console.error(error);
+
+    showError(
+      "Unable to connect to Google Sheets.\n\n" +
+      error.message
+    );
+
+  }
+
+  finally {
+
+    processingScan = false;
+
+  }
+
+}
+
+
+// ======================================================
+// SCAN FAILURE
+// ======================================================
+
+function onScanFailure(error) {
+  // Normal scanning failures are ignored.
+}
+
+
+// ======================================================
+// STOP SCANNER
+// ======================================================
+
+async function stopScanner() {
+
+  if (scanner && scannerRunning) {
+
+    try {
+      await scanner.stop();
+    }
+
+    catch(error) {
+      console.log(error);
+    }
+
+    scannerRunning = false;
+
+  }
+
+}
+
+
+// ======================================================
+// DISPLAY RESULT
+// ======================================================
+
+function displayResult(result) {
+
+  document.getElementById("loading").style.display = "none";
+
+  if (!result.success) {
+
+    showError(result.error || "Unknown server error.");
+    return;
+
+  }
+
+
+  // NOT REGISTERED
+
+  if (!result.registered) {
+
+    document.getElementById("notRegistered").style.display = "block";
+
+    document.getElementById("qrText").textContent =
+      "QR ID: " + (result.qr || "");
+
+    speak("Not yet registered");
+
+    return;
+
+  }
+
+
+  // REGISTERED EMPLOYEE
+
+  document.getElementById("employeeCard").style.display = "block";
+
+  setText("name", result.name);
+  setText("employeeDetails",
+    (result.agency || "") +
+    (result.agency && result.position ? " | " : "") +
+    (result.position || "")
+  );
+
+  setText("qrNumber", result.qr);
+
+  setStatus("medicalStatus", result.medicalStatus);
+  setText("medicalDate", result.medicalDate);
+
+  setStatus("healthCardStatus", result.healthCardStatus);
+  setText("healthCardIssueDate", result.healthCardIssueDate);
+  setText("healthCardExpiry", result.healthCardExpiry);
+
+  setStatus("workingPermit", result.workingPermit);
+  setText("workingPermitIssueDate", result.workingPermitIssueDate);
+
+
+  // DOCUMENT LINKS
+
+  setDocumentLink(
+    "medicalLinkContainer",
+    result.medicalLink,
+    "📄 OPEN MEDICAL RECORD"
+  );
+
+  setDocumentLink(
+    "healthCardLinkContainer",
+    result.healthCardLink,
+    "🪪 OPEN HEALTH CARD"
+  );
+
+  setDocumentLink(
+    "workingPermitLinkContainer",
+    result.workingPermitLink,
+    "📋 OPEN WORKING PERMIT"
+  );
+
+
+  speak("Employee record found");
+
+}
+
+
+// ======================================================
+// SET TEXT SAFELY
+// ======================================================
+
+function setText(id, value) {
+
+  document.getElementById(id).textContent =
+    value || "Not available";
+
+}
+
+
+// ======================================================
+// STATUS DISPLAY
+// ======================================================
+
+function setStatus(id, value) {
+
+  const element = document.getElementById(id);
+
+  const status = String(value || "").trim();
+
+  const normalized = status.toLowerCase();
+
+  element.className = "status";
+  element.textContent = status || "Not available";
+
+  if (!status) {
+    element.classList.add("neutral");
+  }
+
+  else if (
+    normalized.includes("cleared") ||
+    normalized.includes("valid") ||
+    normalized.includes("approved") ||
+    normalized.includes("compliant") ||
+    normalized === "yes"
+  ) {
+    element.classList.add("good");
+  }
+
+  else if (
+    normalized.includes("not cleared") ||
+    normalized.includes("expired") ||
+    normalized.includes("invalid") ||
+    normalized.includes("not compliant") ||
+    normalized === "no"
+  ) {
+    element.classList.add("bad");
+  }
+
+  else if (
+    normalized.includes("pending") ||
+    normalized.includes("for renewal") ||
+    normalized.includes("processing")
+  ) {
+    element.classList.add("pending");
+  }
+
+  else {
+    element.classList.add("neutral");
+  }
+
+}
+
+
+// ======================================================
+// DOCUMENT LINKS
+// ======================================================
+
+function setDocumentLink(containerId, url, label) {
+
+  const container = document.getElementById(containerId);
+
+  container.replaceChildren();
+
+  const link = String(url || "").trim();
+
+  if (!link) {
+
+    const message = document.createElement("div");
+
+    message.className = "no-document";
+    message.textContent = "No document link available.";
+
+    container.appendChild(message);
+
+    return;
+
+  }
+
+  // Only allow normal web links
+  let parsedURL;
+
+  try {
+    parsedURL = new URL(link);
+  }
+
+  catch(error) {
+    parsedURL = null;
+  }
+
+  if (
+    !parsedURL ||
+    !["http:", "https:"].includes(parsedURL.protocol)
+  ) {
+
+    const message = document.createElement("div");
+
+    message.className = "no-document";
+    message.textContent = "Document link unavailable or invalid.";
+
+    container.appendChild(message);
+
+    return;
+
+  }
+
+  const anchor = document.createElement("a");
+
+  anchor.className = "document-button";
+  anchor.href = parsedURL.href;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  anchor.textContent = label;
+
+  container.appendChild(anchor);
+
+}
+
+
+// ======================================================
+// SCAN AGAIN
+// ======================================================
+
+async function scanAgain() {
+
+  await stopScanner();
+
+  lastQR = "";
+  lastScanTime = 0;
+  processingScan = false;
+
+  hideResults();
+
+  document.getElementById("scannerMessage").style.display = "block";
+  document.getElementById("scannerMessage").innerText =
+    "Starting camera...";
+
+  startScanner();
+
+}
+
+
+// ======================================================
+// HIDE RESULTS
+// ======================================================
+
+function hideResults() {
+
+  document.getElementById("employeeCard").style.display = "none";
+  document.getElementById("notRegistered").style.display = "none";
+  document.getElementById("errorBox").style.display = "none";
+  document.getElementById("loading").style.display = "none";
+
+}
+
+
+// ======================================================
+// CAMERA ERROR
+// ======================================================
+
+function showCameraError(error) {
+
+  document.getElementById("reader").style.display = "none";
+  document.getElementById("startButton").style.display = "inline-block";
+
+  showError(
+    "CAMERA ERROR\n\n" +
+    (error.name || "Error") +
+    "\n" +
+    (error.message || error)
+  );
+
+}
+
+
+// ======================================================
+// GENERAL ERROR
+// ======================================================
+
+function showError(message) {
+
+  document.getElementById("loading").style.display = "none";
+
+  const box = document.getElementById("errorBox");
+
+  box.textContent = "⚠️ ERROR\n\n" + message;
+  box.style.display = "block";
+
+  document.getElementById("startButton").style.display =
+    "inline-block";
+
+  document.getElementById("reader").style.display = "none";
+
+  document.getElementById("scannerMessage").style.display =
+    "block";
+
+  document.getElementById("scannerMessage").innerText =
+    "Please try again.";
+
+}
+
+
+// ======================================================
+// VOICE ANNOUNCEMENT
+// ======================================================
+
+function speak(text) {
+
+  try {
+
+    window.speechSynthesis.cancel();
+
+    const speech = new SpeechSynthesisUtterance(text);
+
+    speech.volume = 1;
+    speech.rate = 1;
+    speech.pitch = 1;
+    speech.lang = "en-US";
+
+    window.speechSynthesis.speak(speech);
+
+  }
+
+  catch(error) {
+    console.log(error);
+  }
+
+}
+
+</script>
+
+</body>
+</html>
